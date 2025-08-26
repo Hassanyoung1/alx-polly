@@ -1,0 +1,32 @@
+{
+  "name": "alx-polly",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "env:setup": "cp .env.example .env.local",
+    "env:validate": "node -e \"require('./lib/env').validateEnvironment()\"",
+    "db:setup": "echo 'Database will be created automatically on first run'",
+    "clean": "rm -rf .next && rm -rf out",
+    "reset": "npm run clean && rm -rf node_modules && npm install"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "next": "15.5.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "tailwind-merge": "^3.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
