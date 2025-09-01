@@ -1,10 +1,8 @@
-"use client"
-
-import { usePoll } from "@/hooks/use-polls"
+import { getPoll, getUserVote } from "@/lib/polls"
 import { PollVoting } from "@/components/polls/poll-voting"
-import { pollService } from "@/lib/api"
-import { useEffect, useState, use } from "react"
-import { Vote } from "@/types"
+import { PollResultChart } from "@/components/polls/poll-result-chart"
+import { notFound } from "next/navigation"
+import { Button } from "@/components/ui/button"
 
 interface PollPageProps {
   params: Promise<{
@@ -12,62 +10,45 @@ interface PollPageProps {
   }>
 }
 
-export default function PollPage({ params }: PollPageProps) {
-  const { id } = use(params)
-  const { poll, isLoading, error, refetch } = usePoll(id)
-  const [userVote, setUserVote] = useState<Vote | undefined>(undefined)
+export default async function PollPage({ params }: PollPageProps) {
+  const { id } = await params
+  const poll = await getPoll(id)
 
-  useEffect(() => {
-    if (poll) {
-      // TODO: Get actual user ID from auth context
-      pollService.getUserVote(poll.id, "current_user").then(vote => {
-        setUserVote(vote || undefined)
-      })
-    }
-  }, [poll])
-
-  const handleVote = async (optionId: string) => {
-    if (!poll) return
-
-    try {
-      const vote = await pollService.vote(poll.id, optionId)
-      setUserVote(vote)
-      refetch() // Refresh poll data to get updated vote counts
-    } catch (error) {
-      console.error("Failed to vote:", error)
-      throw error
-    }
+  if (!poll) {
+    notFound()
   }
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-4">
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Loading poll...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error || !poll) {
-    return (
-      <div className="container mx-auto p-4">
-        <div className="text-center py-12">
-          <p className="text-red-500">
-            {error || "Poll not found"}
-          </p>
-        </div>
-      </div>
-    )
-  }
+  // TODO: Get actual user ID from auth context
+  // For now, skip user vote fetching to avoid UUID errors
+  const userVote = null // await getUserVote(id, "current_user")
 
   return (
-    <div className="container mx-auto p-4 max-w-2xl">
-      <PollVoting 
-        poll={poll} 
-        userVote={userVote}
-        onVote={handleVote}
-      />
+    <div className="container mx-auto p-4 max-w-4xl">
+      <div className="space-y-8">
+        {/* Voting Interface */}
+        <div className="max-w-2xl mx-auto">
+          <PollVoting 
+            poll={poll} 
+            userVote={userVote || undefined}
+            pollId={id}
+          />
+        </div>
+        
+        {/* Chart Results View */}
+        {(poll.votes?.length || 0) > 0 && (
+          <div>
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold text-muted-foreground">
+                📊 Detailed Results Chart
+              </h2>
+            </div>
+            <PollResultChart 
+              poll={poll} 
+              userVote={userVote || undefined}
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

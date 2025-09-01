@@ -31,6 +31,44 @@ export function formatDistanceToNow(date: Date | string): string {
   return `${diffInYears} year${diffInYears > 1 ? 's' : ''}`
 }
 
+export function formatTimeUntil(date: Date | string): string {
+  const now = new Date()
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  const diffInSeconds = Math.floor((dateObj.getTime() - now.getTime()) / 1000)
+
+  // If the date is in the past, return negative time indication
+  if (diffInSeconds < 0) {
+    return formatDistanceToNow(dateObj)
+  }
+
+  if (diffInSeconds < 60) {
+    return "less than a minute"
+  }
+
+  const diffInMinutes = Math.floor(diffInSeconds / 60)
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''}`
+  }
+
+  const diffInHours = Math.floor(diffInMinutes / 60)
+  if (diffInHours < 24) {
+    return `${diffInHours} hour${diffInHours > 1 ? 's' : ''}`
+  }
+
+  const diffInDays = Math.floor(diffInHours / 24)
+  if (diffInDays < 30) {
+    return `${diffInDays} day${diffInDays > 1 ? 's' : ''}`
+  }
+
+  const diffInMonths = Math.floor(diffInDays / 30)
+  if (diffInMonths < 12) {
+    return `${diffInMonths} month${diffInMonths > 1 ? 's' : ''}`
+  }
+
+  const diffInYears = Math.floor(diffInMonths / 12)
+  return `${diffInYears} year${diffInYears > 1 ? 's' : ''}`
+}
+
 export function formatDate(date: Date | string): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date
   return new Intl.DateTimeFormat('en-US', {

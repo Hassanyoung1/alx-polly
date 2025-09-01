@@ -1,8 +1,21 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function Home() {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="text-center max-w-4xl mx-auto">
@@ -16,16 +29,33 @@ export default function Home() {
             Share your polls with the world and see real-time results.
           </p>
           <div className="flex gap-4 justify-center">
-            <Link href="/polls">
-              <Button size="lg">
-                Browse Polls
-              </Button>
-            </Link>
-            <Link href="/polls/new">
-              <Button variant="outline" size="lg">
-                Create Poll
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <Link href="/polls">
+                  <Button size="lg">
+                    Browse Polls
+                  </Button>
+                </Link>
+                <Link href="/polls/new">
+                  <Button variant="outline" size="lg">
+                    Create Poll
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/register">
+                  <Button size="lg">
+                    Get Started
+                  </Button>
+                </Link>
+                <Link href="/auth/login">
+                  <Button variant="outline" size="lg">
+                    Sign In
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
 

@@ -5,17 +5,15 @@ import { PollCard } from "./poll-card"
 
 interface PollListProps {
   polls: Poll[]
-  onPollClick?: (poll: Poll) => void
-  emptyMessage?: string
 }
 
-export function PollList({ polls, onPollClick, emptyMessage = "No polls found" }: PollListProps) {
+export function PollList({ polls }: PollListProps) {
   if (polls.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="text-6xl mb-4">📊</div>
         <h3 className="text-xl font-semibold mb-2">No Polls Yet</h3>
-        <p className="text-muted-foreground">{emptyMessage}</p>
+        <p className="text-muted-foreground">No polls available. Create your first poll!</p>
       </div>
     )
   }
@@ -26,7 +24,6 @@ export function PollList({ polls, onPollClick, emptyMessage = "No polls found" }
         <PollCard
           key={poll.id}
           poll={poll}
-          onClick={() => onPollClick?.(poll)}
         />
       ))}
     </div>

@@ -1,9 +1,6 @@
-import { AuthForm } from "@/components/auth/auth-form";
+import { redirect } from "next/navigation"
 
 export default function AuthPage() {
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <AuthForm />
-    </div>
-  );
+  // Redirect to the new login page
+  redirect("/auth/login")
 }

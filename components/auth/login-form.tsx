@@ -2,23 +2,22 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/auth-context"
 
-export function AuthForm() {
-  const [isLogin, setIsLogin] = useState(true)
+export function LoginForm() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    name: "",
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   
-  const { signIn, signUp } = useAuth()
+  const { signIn } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,12 +26,7 @@ export function AuthForm() {
     setError("")
 
     try {
-      let result
-      if (isLogin) {
-        result = await signIn(formData.email, formData.password)
-      } else {
-        result = await signUp(formData.email, formData.password, formData.name)
-      }
+      const result = await signIn(formData.email, formData.password)
 
       if (result.error) {
         throw result.error
@@ -58,34 +52,14 @@ export function AuthForm() {
     <Card className="w-full max-w-md mx-auto">
       <div className="p-6">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold">
-            {isLogin ? "Sign In" : "Sign Up"}
-          </h1>
-          <p className="text-muted-foreground">
-            {isLogin ? "Welcome back!" : "Create your account"}
-          </p>
+          <h1 className="text-2xl font-bold">Sign In</h1>
+          <p className="text-muted-foreground">Welcome back to ALX Polly</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm p-3 rounded-md">
               {error}
-            </div>
-          )}
-
-          {!isLogin && (
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Enter your full name"
-                required={!isLogin}
-                disabled={isLoading}
-              />
             </div>
           )}
 
@@ -118,25 +92,20 @@ export function AuthForm() {
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading 
-              ? (isLogin ? "Signing In..." : "Signing Up...") 
-              : (isLogin ? "Sign In" : "Sign Up")
-            }
+            {isLoading ? "Signing In..." : "Sign In"}
           </Button>
         </form>
 
-        <div className="mt-4 text-center">
-          <button
-            type="button"
-            onClick={() => setIsLogin(!isLogin)}
-            disabled={isLoading}
-            className="text-sm text-muted-foreground hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLogin 
-              ? "Don't have an account? Sign up" 
-              : "Already have an account? Sign in"
-            }
-          </button>
+        <div className="mt-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link 
+              href="/auth/register" 
+              className="text-primary hover:underline"
+            >
+              Sign up
+            </Link>
+          </p>
         </div>
       </div>
     </Card>

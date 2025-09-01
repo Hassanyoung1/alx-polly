@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { supabase } from '@/lib/supabase'
 
-// Mock user storage - in production, this would be a database
-let users: any[] = []
-
-// POST /api/auth/signin - Sign in user
+// POST /api/auth/signin - Sign in user (using Supabase)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -17,23 +15,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (password.length < 6) {
+    // Sign in with Supabase
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
-        { status: 400 }
+        { error: error.message },
+        { status: 401 }
       )
     }
 
-    // Mock authentication - in production, verify against database
-    const user = {
-      id: "user_123",
-      email,
-      name: email.split("@")[0] // Use part of email as name for demo
-    }
-
-    await new Promise(resolve => setTimeout(resolve, 800)) // Simulate API delay
-    return NextResponse.json(user)
+    // Return user data
+    return NextResponse.json({
+      user: data.user,
+      session: data.session
+    })
   } catch (error) {
+    console.error('Sign in error:', error)
     return NextResponse.json(
       { error: 'Authentication failed' },
       { status: 500 }

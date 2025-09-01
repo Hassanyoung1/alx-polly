@@ -79,6 +79,7 @@ alx-polly/
 - **View Polls**: Card-based poll listing
 - **Vote on Polls**: Interactive voting interface with real-time results
 - **Poll Details**: Individual poll pages with voting and results
+- **Chart Visualization**: Enhanced PollResultChart component with colorful progress bars, statistics, and winner display
 
 ### 4. **UI Components (Shadcn)**
 - Button with variants (default, outline, secondary, destructive)

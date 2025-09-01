@@ -1,11 +1,25 @@
 "use client"
 
 import Link from "next/link"
-import { useAuth } from "@/hooks/use-auth"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 
 export function Navigation() {
-  const { user, isAuthenticated, signOut } = useAuth()
+  const { user, loading, signOut } = useAuth()
+
+  if (loading) {
+    return (
+      <nav className="border-b bg-background">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex justify-between items-center">
+            <Link href="/" className="text-xl font-bold">
+              ALX Polly
+            </Link>
+          </div>
+        </div>
+      </nav>
+    )
+  }
 
   return (
     <nav className="border-b bg-background">
@@ -21,7 +35,7 @@ export function Navigation() {
             >
               Polls
             </Link>
-            {isAuthenticated && (
+            {user && (
               <Link 
                 href="/polls/new" 
                 className="text-muted-foreground hover:text-foreground transition-colors"
@@ -32,19 +46,27 @@ export function Navigation() {
           </div>
 
           <div className="flex items-center space-x-4">
-            {isAuthenticated ? (
+            {user ? (
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-muted-foreground">
-                  Welcome, {user?.name}
+                  Welcome, {user.user_metadata?.full_name || user.email}
                 </span>
+                <Link href="/profile">
+                  <Button variant="outline" size="sm">Profile</Button>
+                </Link>
                 <Button variant="outline" onClick={signOut}>
                   Sign Out
                 </Button>
               </div>
             ) : (
-              <Link href="/auth">
-                <Button>Sign In</Button>
-              </Link>
+              <div className="flex items-center space-x-2">
+                <Link href="/auth/login">
+                  <Button variant="outline">Sign In</Button>
+                </Link>
+                <Link href="/auth/register">
+                  <Button>Sign Up</Button>
+                </Link>
+              </div>
             )}
           </div>
         </div>
