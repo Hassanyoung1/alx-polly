@@ -1,45 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getPoll, updatePoll, deletePoll, togglePollStatus } from '../../../../lib/polls'
 
-// Mock data - same as in main polls route
-// In production, this would be shared from a database
-const polls = [
-  {
-    id: "1",
-    title: "What's your favorite programming language?",
-    description: "Help us understand the community preferences",
-    createdBy: "user1",
-    createdAt: new Date("2025-08-20").toISOString(),
-    updatedAt: new Date("2025-08-20").toISOString(),
-    expiresAt: new Date("2025-09-20").toISOString(),
-    isActive: true,
-    options: [
-      { id: "opt1", pollId: "1", text: "JavaScript", order: 1, votes: [] },
-      { id: "opt2", pollId: "1", text: "Python", order: 2, votes: [] },
-      { id: "opt3", pollId: "1", text: "TypeScript", order: 3, votes: [] },
-      { id: "opt4", pollId: "1", text: "Rust", order: 4, votes: [] },
-    ],
-    votes: [
-      { id: "vote1", pollId: "1", optionId: "opt1", userId: "user1", createdAt: new Date().toISOString() },
-      { id: "vote2", pollId: "1", optionId: "opt2", userId: "user2", createdAt: new Date().toISOString() },
-      { id: "vote3", pollId: "1", optionId: "opt1", userId: "user3", createdAt: new Date().toISOString() },
-    ]
-  },
-  {
-    id: "2", 
-    title: "Best time for team meetings?",
-    createdBy: "user2",
-    createdAt: new Date("2025-08-25").toISOString(),
-    updatedAt: new Date("2025-08-25").toISOString(),
-    isActive: true,
-    options: [
-      { id: "opt5", pollId: "2", text: "9:00 AM", order: 1, votes: [] },
-      { id: "opt6", pollId: "2", text: "2:00 PM", order: 2, votes: [] },
-      { id: "opt7", pollId: "2", text: "4:00 PM", order: 3, votes: [] },
-    ],
-    votes: []
-  }
-]
-
+// Legacy API endpoint for backward compatibility
 // GET /api/polls/[id] - Get specific poll
 export async function GET(
   request: NextRequest,
@@ -47,9 +9,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    await new Promise(resolve => setTimeout(resolve, 200)) // Simulate API delay
     
-    const poll = polls.find(p => p.id === id)
+    // Validate UUID format - if not UUID, return 400
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(id)) {
+      return NextResponse.json(
+        { error: 'Invalid poll ID format. Poll ID must be a valid UUID.' },
+        { status: 400 }
+      )
+    }
+    
+    const poll = await getPoll(id)
     
     if (!poll) {
       return NextResponse.json(
@@ -57,11 +27,93 @@ export async function GET(
         { status: 404 }
       )
     }
-
+    
     return NextResponse.json(poll)
   } catch (error) {
+    console.error('Error fetching poll:', error)
     return NextResponse.json(
       { error: 'Failed to fetch poll' },
+      { status: 500 }
+    )
+  }
+}
+
+// PUT /api/polls/[id] - Update poll
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+    
+    // Validate required fields
+    if (!body.title || !body.options || !Array.isArray(body.options) || body.options.length < 2) {
+      return NextResponse.json(
+        { error: 'Invalid poll data. Title and at least 2 options are required.' },
+        { status: 400 }
+      )
+    }
+    
+    const poll = await updatePoll(id, body)
+    
+    return NextResponse.json(poll)
+  } catch (error) {
+    console.error('Error updating poll:', error)
+    return NextResponse.json(
+      { error: 'Failed to update poll' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE /api/polls/[id] - Delete poll
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    
+    await deletePoll(id)
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Poll deleted successfully' 
+    })
+  } catch (error) {
+    console.error('Error deleting poll:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete poll' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH /api/polls/[id] - Toggle poll status
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const { is_active } = await request.json()
+    
+    // Validate is_active field
+    if (typeof is_active !== 'boolean') {
+      return NextResponse.json(
+        { error: 'is_active field must be a boolean' },
+        { status: 400 }
+      )
+    }
+    
+    const poll = await togglePollStatus(id, is_active)
+    
+    return NextResponse.json(poll)
+  } catch (error) {
+    console.error('Error toggling poll status:', error)
+    return NextResponse.json(
+      { error: 'Failed to toggle poll status' },
       { status: 500 }
     )
   }

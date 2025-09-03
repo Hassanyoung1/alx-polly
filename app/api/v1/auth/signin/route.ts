@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-// POST /api/auth/signin - Sign in user (using Supabase)
+// POST /api/v1/auth/signin - Sign in user
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()

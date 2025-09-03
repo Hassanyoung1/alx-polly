@@ -17,3 +17,4 @@ WHERE table_name = 'polls' AND column_name = 'created_by';
 -- Test: Create a poll without a user (should work now)
 -- INSERT INTO polls (title, description, is_active) VALUES ('Test Poll', 'Testing NULL created_by', true);
 
+

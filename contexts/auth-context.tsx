@@ -23,17 +23,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.warn('Session error:', error.message)
+          // If there's an invalid refresh token, clear the session
+          if (error.message.includes('refresh') || error.message.includes('Invalid')) {
+            await supabase.auth.signOut()
+            setSession(null)
+            setUser(null)
+          }
+        } else {
+          setSession(session)
+          setUser(session?.user ?? null)
+        }
+      } catch (error) {
+        console.error('Error getting session:', error)
+        // Clear any invalid session data
+        await supabase.auth.signOut()
+        setSession(null)
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
     }
 
     getSession()
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email || 'No user')
+        
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed successfully')
+        } else if (event === 'SIGNED_OUT') {
+          console.log('User signed out')
+          setSession(null)
+          setUser(null)
+        } else if (event === 'SIGNED_IN') {
+          console.log('User signed in')
+          setSession(session)
+          setUser(session?.user ?? null)
+        }
+        
+        // Always update state regardless of event type
         setSession(session)
         setUser(session?.user ?? null)
         setLoading(false)
@@ -45,21 +80,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      // Use Supabase client directly for authentication
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
+      // The auth state change listener will handle updating user/session
       return { user: data.user, error: null }
     } catch (error) {
+      console.error('SignIn error:', error)
       return { user: null, error: error as Error }
     }
   }
 
   const signUp = async (email: string, password: string, name: string) => {
     try {
+      // Use Supabase client directly for registration
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -70,16 +111,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       })
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
+      // The auth state change listener will handle updating user/session
       return { user: data.user, error: null }
     } catch (error) {
+      console.error('SignUp error:', error)
       return { user: null, error: error as Error }
     }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.error('Sign out error:', error)
+    }
   }
 
   const value = {

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { formatDistanceToNow, formatTimeUntil } from "@/lib/date-utils"
 import { voteAction } from "@/lib/actions"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
 
 interface PollVotingProps {
   poll: Poll
@@ -17,6 +18,7 @@ interface PollVotingProps {
 
 export function PollVoting({ poll, userVote, pollId }: PollVotingProps) {
   const router = useRouter()
+  const { user } = useAuth()
   const [selectedOption, setSelectedOption] = useState<string>(userVote?.option_id || "")
   const [isVoting, setIsVoting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,26 +29,31 @@ export function PollVoting({ poll, userVote, pollId }: PollVotingProps) {
   const isExpired = expirationTime && expirationTime < currentTime
   const canVote = poll.is_active && !isExpired && !userVote
 
-  const handleVote = async () => {
-    if (!selectedOption || !canVote) return
+    const handleVote = async () => {
+    if (!selectedOption) {
+      setError("Please select an option")
+      return
+    }
+
+    if (!user) {
+      setError("You must be logged in to vote")
+      return
+    }
 
     setIsVoting(true)
     setError(null)
 
     try {
-      // TODO: Get actual user ID from auth context
-      // For now, use undefined to allow anonymous voting
-      const result = await voteAction(pollId, selectedOption, undefined)
-
+      const result = await voteAction(pollId, selectedOption, user.id)
+      
       if (result.success) {
-        // Refresh the page to show updated vote counts
         router.refresh()
       } else {
         setError(result.error || "Failed to submit vote")
       }
     } catch (error) {
+      console.error("Error voting:", error)
       setError("An unexpected error occurred")
-      console.error("Failed to vote:", error)
     } finally {
       setIsVoting(false)
     }
@@ -139,7 +146,7 @@ export function PollVoting({ poll, userVote, pollId }: PollVotingProps) {
 
         {userVote && (
           <div className="text-center text-green-600 font-medium">
-            ✓ You voted for "{poll.options?.find(o => o.id === userVote.option_id)?.text || 'Unknown option'}"
+            ✓ You voted for &quot;{poll.options?.find(o => o.id === userVote.option_id)?.text || 'Unknown option'}&quot;
           </div>
         )}
 

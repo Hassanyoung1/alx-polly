@@ -4,6 +4,7 @@ import { Poll } from "@/types"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatDistanceToNow, formatTimeUntil } from "@/lib/date-utils"
+import { PollActions } from "./poll-actions"
 import Link from "next/link"
 
 interface PollCardProps {
@@ -21,11 +22,18 @@ export function PollCard({ poll }: PollCardProps) {
       <Card className="cursor-pointer hover:shadow-md transition-shadow hover:bg-accent/50">
         <div className="p-4">
           <div className="flex justify-between items-start mb-2">
-            <h3 className="font-semibold text-lg line-clamp-2">{poll.title}</h3>
-            <div className="flex gap-2">
-              {isExpired && <Badge variant="destructive">Expired</Badge>}
-              {!poll.is_active && <Badge variant="secondary">Inactive</Badge>}
-              {poll.is_active && !isExpired && <Badge>Active</Badge>}
+            <h3 className="font-semibold text-lg line-clamp-2 flex-1 pr-2">{poll.title}</h3>
+            <div className="flex items-center gap-2">
+              <div className="flex gap-2">
+                {isExpired && <Badge variant="destructive">Expired</Badge>}
+                {!poll.is_active && <Badge variant="secondary">Inactive</Badge>}
+                {poll.is_active && !isExpired && <Badge>Active</Badge>}
+              </div>
+              <PollActions 
+                pollId={poll.id}
+                pollTitle={poll.title}
+                isActive={poll.is_active}
+              />
             </div>
           </div>
           

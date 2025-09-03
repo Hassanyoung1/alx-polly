@@ -11,7 +11,7 @@ interface PollResultChartProps {
   showVotingInterface?: boolean
 }
 
-export function PollResultChart({ poll, userVote, showVotingInterface = false }: PollResultChartProps) {
+export function PollResultChart({ poll, userVote }: PollResultChartProps) {
   const totalVotes = poll.votes?.length || 0
   const isExpired = poll.expires_at && new Date(poll.expires_at) < new Date()
 
@@ -191,7 +191,7 @@ export function PollResultChart({ poll, userVote, showVotingInterface = false }:
         {/* User Vote Status */}
         {userVote && (
           <div className="text-center text-green-600 font-medium mb-4">
-            ✓ You voted for "{poll.options?.find(o => o.id === userVote.option_id)?.text || 'Unknown option'}"
+            ✓ You voted for &quot;{poll.options?.find(o => o.id === userVote.option_id)?.text || 'Unknown option'}&quot;
           </div>
         )}
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Poll } from "@/types"
-import { pollService } from "@/lib/api"
+import { listPollsAPI, getPollAPI } from "@/lib/api-client"
 
 export function usePolls() {
   const [polls, setPolls] = useState<Poll[]>([])
@@ -13,7 +13,7 @@ export function usePolls() {
     try {
       setIsLoading(true)
       setError(null)
-      const data = await pollService.getPolls()
+      const data = await listPollsAPI()
       setPolls(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch polls")
@@ -43,7 +43,7 @@ export function usePoll(id: string) {
     try {
       setIsLoading(true)
       setError(null)
-      const data = await pollService.getPoll(id)
+      const data = await getPollAPI(id)
       setPoll(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch poll")

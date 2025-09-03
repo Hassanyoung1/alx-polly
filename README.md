@@ -1,7 +1,61 @@
 # ALX Polly - Polling Application
 
 ## Overview
-ALX Polly is a modern Next.js polling application that allows users to create, share, and participate in polls. The application is built with TypeScript, Tailwind CSS, and Shadcn UI components with a complete API backend.
+ALX Polly is a modern Next.js polling application that allows users to create, share, and participate in polls. The application is built with TypeScript, Tailwind CSS, and Shadcn UI components with a complete API v1 backend.
+
+## 🚀 API v1 Structure (COMPLETE)
+
+ALX Polly features a fully standardized API structure with consistent `/api/v1/` endpoints following RESTful conventions:
+
+### Authentication API v1 (RESTful)
+- `POST /api/v1/auth/login` - User authentication
+- `POST /api/v1/auth/register` - User registration  
+- `POST /api/v1/auth/logout` - User logout
+- `GET /api/v1/auth/profile` - Get user profile
+- `PUT /api/v1/auth/profile` - Update user profile
+
+### Polls API v1 (RESTful)
+- `GET /api/v1/polls` - List all polls
+- `POST /api/v1/polls` - Create new poll
+- `GET /api/v1/polls/[id]` - Get specific poll
+- `PUT /api/v1/polls/[id]` - Update poll
+- `DELETE /api/v1/polls/[id]` - Delete poll
+- `PATCH /api/v1/polls/[id]` - Toggle poll status
+
+### Voting API v1 (RESTful)
+- `POST /api/v1/polls/[id]/vote` - Submit vote
+- `GET /api/v1/polls/[id]/vote` - Get user vote
+
+### Profile API v1
+- `GET /api/v1/profile/get` - Get detailed profile
+- `PUT /api/v1/profile/update` - Update detailed profile
+
+### Legacy Authentication (Backward Compatible)
+- `POST /api/v1/auth/signin` - User authentication (legacy)
+- `POST /api/v1/auth/signup` - User registration (legacy)
+- `POST /api/v1/auth/signout` - User logout (legacy)
+
+### Polls API v1
+- `POST /api/v1/poll/create` - Create new poll
+- `PUT /api/v1/poll/update` - Update existing poll  
+- `DELETE /api/v1/poll/delete` - Delete poll
+- `GET /api/v1/poll/get` - Get specific poll
+- `GET /api/v1/poll/list` - List all polls
+
+### Voting API v1
+- `POST /api/v1/poll/[id]/vote` - Submit vote
+- `GET /api/v1/poll/[id]/vote` - Get user vote
+
+### Profile API v1
+- `GET /api/v1/profile/get` - Get detailed profile
+- `PUT /api/v1/profile/update` - Update detailed profile
+
+### Legacy Endpoints (Backward Compatible)
+- `GET /api/polls` - List polls
+- `POST /api/polls` - Create poll
+- `GET /api/polls/[id]` - Get specific poll
+- `PUT /api/polls/[id]` - Update poll
+- `DELETE /api/polls/[id]` - Delete poll
 
 ## Quick Start
 
@@ -80,6 +134,69 @@ alx-polly/
 - **Vote on Polls**: Interactive voting interface with real-time results
 - **Poll Details**: Individual poll pages with voting and results
 - **Chart Visualization**: Enhanced PollResultChart component with colorful progress bars, statistics, and winner display
+
+### 4. **New API Integration**
+- **Client Library**: Type-safe API client functions
+- **Server Actions**: Updated server actions using new endpoints
+- **Demo Pages**: Interactive API testing at `/api-demo` and `/new-api-example`
+
+## 🔧 API Usage Examples
+
+### Using New Server Actions
+```typescript
+import { createPollActionNew, updatePollActionNew, deletePollActionNew } from '@/lib/actions-new'
+
+// Create poll
+const result = await createPollActionNew(formData)
+if (result.success) {
+  console.log('Poll created:', result.data)
+}
+
+// Update poll
+const updateResult = await updatePollActionNew(pollId, formData)
+
+// Delete poll
+const deleteResult = await deletePollActionNew(pollId)
+```
+
+### Using API Client Directly
+```typescript
+import { createPollAPI, updatePollAPI, deletePollAPI } from '@/lib/api-client'
+
+// Create poll
+const poll = await createPollAPI({
+  title: "Sample Poll",
+  options: ["Option 1", "Option 2"],
+  expiresAt: "2025-12-31T23:59:59.000Z"
+})
+
+// Update poll
+const updatedPoll = await updatePollAPI(pollId, {
+  title: "Updated Title"
+})
+
+// Delete poll
+await deletePollAPI(pollId)
+```
+
+### Direct API Calls
+```typescript
+// Create poll
+const response = await fetch('/api/poll/create', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    title: "My Poll",
+    options: ["Option A", "Option B"]
+  })
+})
+
+// List polls
+const polls = await fetch('/api/poll/list').then(res => res.json())
+
+// Get specific poll
+const poll = await fetch(`/api/poll/get?id=${pollId}`).then(res => res.json())
+```
 
 ### 4. **UI Components (Shadcn)**
 - Button with variants (default, outline, secondary, destructive)

@@ -26,15 +26,19 @@ export function LoginForm() {
     setError("")
 
     try {
+      console.log('LoginForm: Starting sign-in process')
       const result = await signIn(formData.email, formData.password)
+      console.log('LoginForm: SignIn result:', { hasUser: !!result.user, hasError: !!result.error })
 
       if (result.error) {
         throw result.error
       }
       
+      console.log('LoginForm: Redirecting to /polls')
       // Redirect to polls page after successful authentication
       router.push("/polls")
     } catch (err) {
+      console.error('LoginForm: Error during sign-in:', err)
       setError(err instanceof Error ? err.message : "Authentication failed")
     } finally {
       setIsLoading(false)
@@ -98,7 +102,7 @@ export function LoginForm() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link 
               href="/auth/register" 
               className="text-primary hover:underline"

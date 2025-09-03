@@ -3,14 +3,14 @@ import { Poll, CreatePollRequest, Vote, AuthUser } from "@/types"
 
 const API_BASE = '/api'
 
-// API Configuration - use simple defaults for client-side
-const getApiConfig = () => ({
-  baseURL: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001',
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
+// Note: getApiConfig is available for future use if needed
+// const getApiConfig = () => ({
+//   baseURL: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001',
+//   timeout: 10000,
+//   headers: {
+//     'Content-Type': 'application/json',
+//   },
+// })
 
 export const pollService = {
   // Get all polls
