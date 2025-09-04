@@ -1,4 +1,5 @@
-import { supabaseServer } from './supabaseServer'
+import { supabaseServerOptimized as supabaseServer } from './supabaseServerOptimized'
+import { performanceCache, cacheKeys } from './performance-cache'
 import { Poll, CreatePollRequest, Vote } from '@/types'
 
 export async function createPoll(pollData: CreatePollRequest): Promise<Poll> {
@@ -43,6 +44,9 @@ export async function createPoll(pollData: CreatePollRequest): Promise<Poll> {
 
     if (fetchError) throw fetchError
 
+    // Invalidate polls cache since we added a new poll
+    performanceCache.invalidate(cacheKeys.polls())
+    
     return completePoll as Poll
   } catch (error) {
     console.error('Error creating poll:', error)
@@ -51,62 +55,77 @@ export async function createPoll(pollData: CreatePollRequest): Promise<Poll> {
 }
 
 export async function getPolls(): Promise<Poll[]> {
-  try {
-    const { data: polls, error } = await supabaseServer
-      .from('polls')
-      .select(`
-        *,
-        poll_options (*)
-      `)
-      // Show all polls (active and inactive) for management
-      .order('created_at', { ascending: false })
+  console.log('🔍 getPolls: Starting optimized function...')
+  
+  // Use performance cache to reduce database queries
+  return performanceCache.get(
+    cacheKeys.polls(),
+    async () => {
+      console.log('🔍 supabaseServer: Available')
+      
+      const { data, error } = await supabaseServer
+        .from('polls')
+        .select(`
+          *,
+          poll_options (*),
+          votes (*)
+        `)
+        .order('created_at', { ascending: false })
 
-    if (error) throw error
-    
-    // Transform the data to match our interface
-    const transformedPolls = polls?.map(poll => ({
-      ...poll,
-      options: poll.poll_options || [],
-      votes: [] // We'll fetch votes separately if needed
-    })) || []
-    
-    return transformedPolls as Poll[]
-  } catch (error) {
-    console.error('Error fetching polls:', error)
-    throw new Error('Failed to fetch polls')
-  }
+      console.log(`🔍 Query completed. Error: ${error ? error.message : 'None'}`)
+      
+      if (error) {
+        throw error
+      }
+
+      console.log(`🔍 Data received: ${data ? `${data.length} polls` : 'No data'}`)
+
+      if (!data) {
+        return []
+      }
+
+      // Transform the data to match our interface
+      return data.map((poll: any) => ({
+        ...poll,
+        options: poll.poll_options || [],
+        votes: poll.votes || []
+      }))
+    },
+    60000 // Cache for 1 minute
+  )
 }
 
 export async function getPoll(id: string): Promise<Poll | null> {
-  try {
-    const { data: poll, error } = await supabaseServer
-      .from('polls')
-      .select(`
-        *,
-        poll_options (*),
-        votes (*)
-      `)
-      .eq('id', id)
-      .eq('is_active', true)
-      .single()
+  return performanceCache.get(
+    cacheKeys.pollWithVotes(id),
+    async () => {
+      const { data: poll, error } = await supabaseServer
+        .from('polls')
+        .select(`
+          *,
+          poll_options (*),
+          votes (*)
+        `)
+        .eq('id', id)
+        .eq('is_active', true)
+        .single()
 
-    if (error) {
-      if (error.code === 'PGRST116') return null // No rows returned
-      throw error
-    }
+      if (error) {
+        if (error.code === 'PGRST116') return null // No rows returned
+        throw error
+      }
 
-    // Transform the data to match our interface
-    const transformedPoll = {
-      ...poll,
-      options: poll.poll_options || [],
-      votes: poll.votes || []
-    }
+      // Transform the data to match our interface
+      const transformedPoll = {
+        ...poll,
+        options: poll.poll_options || [],
+        votes: poll.votes || []
+      }
 
-    return transformedPoll as Poll
-  } catch (error) {
-    console.error('Error fetching poll:', error)
-    throw new Error('Failed to fetch poll')
-  }
+      return transformedPoll as Poll
+    },
+    30000 // Cache for 30 seconds
+  )
 }
 
 export async function getPollForEdit(id: string): Promise<Poll | null> {
@@ -169,6 +188,13 @@ export async function vote(pollId: string, optionId: string, userId?: string): P
       .single()
 
     if (error) throw error
+
+    // Invalidate relevant caches since vote counts changed
+    performanceCache.invalidate(cacheKeys.polls())
+    performanceCache.invalidate(cacheKeys.pollWithVotes(pollId))
+    if (userId) {
+      performanceCache.invalidate(cacheKeys.userVote(pollId, userId))
+    }
 
     return vote as Vote
   } catch (error) {
@@ -272,31 +298,49 @@ export async function updatePoll(pollId: string, pollData: Partial<CreatePollReq
 
 export async function deletePoll(pollId: string): Promise<boolean> {
   try {
-    // Delete votes first (foreign key constraint)
-    const { error: votesError } = await supabaseServer
-      .from('votes')
-      .delete()
-      .eq('poll_id', pollId)
+    let retryCount = 0
+    const maxRetries = 3
+    
+    while (retryCount < maxRetries) {
+      try {
+        // Delete votes first (foreign key constraint)
+        const { error: votesError } = await supabaseServer
+          .from('votes')
+          .delete()
+          .eq('poll_id', pollId)
 
-    if (votesError) throw votesError
+        if (votesError) throw votesError
 
-    // Delete poll options
-    const { error: optionsError } = await supabaseServer
-      .from('poll_options')
-      .delete()
-      .eq('poll_id', pollId)
+        // Delete poll options
+        const { error: optionsError } = await supabaseServer
+          .from('poll_options')
+          .delete()
+          .eq('poll_id', pollId)
 
-    if (optionsError) throw optionsError
+        if (optionsError) throw optionsError
 
-    // Delete the poll itself
-    const { error: pollError } = await supabaseServer
-      .from('polls')
-      .delete()
-      .eq('id', pollId)
+        // Delete the poll itself
+        const { error: pollError } = await supabaseServer
+          .from('polls')
+          .delete()
+          .eq('id', pollId)
 
-    if (pollError) throw pollError
+        if (pollError) throw pollError
 
-    return true
+        return true
+        
+      } catch (attemptError) {
+        if (retryCount === maxRetries - 1) {
+          throw attemptError
+        }
+        console.log(`🔄 Delete attempt ${retryCount + 1} failed, retrying...`)
+        retryCount++
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount))
+      }
+    }
+    
+    throw new Error('Max retry attempts reached')
+    
   } catch (error) {
     console.error('Error deleting poll:', error)
     throw new Error('Failed to delete poll')

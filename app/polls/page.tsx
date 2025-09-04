@@ -3,11 +3,14 @@
 import { PollList } from "@/components/polls/poll-list"
 import { Button } from "@/components/ui/button"
 import { ProtectedRoute } from "@/components/protected-route"
+import { PerformanceMonitor } from "@/components/performance-monitor-optimized"
 import Link from "next/link"
 import { usePolls } from "@/hooks/use-polls"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function PollsPage() {
   const { polls, isLoading, error } = usePolls()
+  const { user } = useAuth()
 
   return (
     <ProtectedRoute>
@@ -45,6 +48,11 @@ export default function PollsPage() {
               <Link href="/polls/new">
                 <Button>Create New Poll</Button>
               </Link>
+            </div>
+            
+            {/* Performance Monitor - shows load times and cache stats */}
+            <div className="mb-6">
+              <PerformanceMonitor />
             </div>
             
             <PollList polls={polls} />

@@ -17,8 +17,17 @@ export function PollCard({ poll }: PollCardProps) {
   const expirationTime = poll.expires_at ? new Date(poll.expires_at) : null
   const isExpired = expirationTime && expirationTime < currentTime
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Prevent navigation if clicking on action buttons
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-action-buttons]')) {
+      e.preventDefault();
+      return;
+    }
+  };
+
   return (
-    <Link href={`/polls/${poll.id}`}>
+    <Link href={`/polls/${poll.id}`} onClick={handleCardClick}>
       <Card className="cursor-pointer hover:shadow-md transition-shadow hover:bg-accent/50">
         <div className="p-4">
           <div className="flex justify-between items-start mb-2">
@@ -29,11 +38,13 @@ export function PollCard({ poll }: PollCardProps) {
                 {!poll.is_active && <Badge variant="secondary">Inactive</Badge>}
                 {poll.is_active && !isExpired && <Badge>Active</Badge>}
               </div>
-              <PollActions 
-                pollId={poll.id}
-                pollTitle={poll.title}
-                isActive={poll.is_active}
-              />
+              <div data-action-buttons>
+                <PollActions 
+                  pollId={poll.id}
+                  pollTitle={poll.title}
+                  isActive={poll.is_active}
+                />
+              </div>
             </div>
           </div>
           
